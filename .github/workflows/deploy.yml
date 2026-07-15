@@ -1,0 +1,43 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy files to EC2 via SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ${{ secrets.AWS_EC2_USER }}
+          key: ${{ secrets.AWS_EC2_SSH_KEY }}
+          source: "aws_deploy/"
+          target: "/home/ubuntu"
+          overwrite: true
+
+      - name: SSH to EC2 and Restart Backend
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ${{ secrets.AWS_EC2_USER }}
+          key: ${{ secrets.AWS_EC2_SSH_KEY }}
+          script: |
+            # Navigate to the backend folder
+            cd /home/ubuntu/aws_deploy/backend
+            
+            # Install production dependencies
+            npm install --production
+            
+            # Restart the app using PM2 (starts it if it isn't already running)
+            pm2 restart server.js || pm2 start server.js --name "bricks-backend"
+            
+            # Save the PM2 process list so it restarts on system reboot
+            pm2 save
