@@ -1,0 +1,671 @@
+{
+  "success": true,
+  "plcConnected": true,
+  "lastPollAt": "2026-05-26T04:15:23.422Z",
+  "energyData": {
+    "amps": 12.852666854858398,
+    "kwh": 628,
+    "hz": 49.9900016784668,
+    "pf": 0.5485437512397766,
+    "voltageAvg": 0,
+    "llAvg": 397.75604248046875,
+    "l1": 230.0800018310547,
+    "l2": 231.239990234375,
+    "l3": 227.61001586914062,
+    "l12": 399.5152587890625,
+    "l23": 397.3798828125,
+    "l31": 396.37310791015625,
+    "l1Amps": 13.043999671936035,
+    "l2Amps": 13.3100004196167,
+    "l3Amps": 12.204000473022461,
+    "l1Pf": 0.6129999756813049,
+    "l2Pf": 0.5260000228881836,
+    "l3Pf": 0.5230000019073486,
+    "overallPowerKw": 4.857012222680044
+  },
+  "stats": {
+    "companyId": "bricks-001",
+    "totalCycles": 7676,
+    "cumulativeCycles": 7676,
+    "cumulativeBlocks": 184224,
+    "todayCycles": 0,
+    "actualCount": 0,
+    "dailyProduction": 0,
+    "blockCount": 24,
+    "totalBlockCountWithCycle": 0,
+    "targetCount": 5000,
+    "overallEfficiency": 0,
+    "lastCycleTimeSec": 0,
+    "runTimeDuration": 0,
+    "machinesRunning": 1,
+    "machinesStopped": 12,
+    "machinesInMaintenance": 0,
+    "totalDowntimeMinutes": 0,
+    "lastUpdated": "2026-05-26T04:15:23.422Z",
+    "overallPowerKw": 4.857012222680044,
+    "totalEnergyKwh": 628,
+    "overallAmps": 12.852666854858398,
+    "powerFactor": 0.5485437512397766,
+    "frequency": 49.9900016784668,
+    "rawSensors": {
+      "systemTotalCycle": {
+        "label": "System Total Cycle",
+        "value": 7676,
+        "unit": "cycles"
+      },
+      "systemTotalCycle2": {
+        "label": "System Total Cycle (alt)",
+        "value": 7676,
+        "unit": "cycles"
+      },
+      "blockCount": {
+        "label": "Block Count",
+        "value": 24,
+        "unit": "blocks"
+      },
+      "totalBlockCountWithCycle": {
+        "label": "Total Block Count With Cycle",
+        "value": 0,
+        "unit": "blocks"
+      },
+      "lastCycleTimeSec": {
+        "label": "Last Cycle Time (sec)",
+        "value": 0,
+        "unit": "s"
+      },
+      "todayCycleCount": {
+        "label": "Today's Cycle Count",
+        "value": 532,
+        "unit": "cycles"
+      },
+      "runTimeDuration": {
+        "label": "Run Time Duration",
+        "value": 0,
+        "unit": "ms"
+      },
+      "targetCycle": {
+        "label": "Target Cycle",
+        "value": 1234,
+        "unit": "cycles"
+      },
+      "activeRecipeName": {
+        "label": "Active Recipe Name",
+        "value": "",
+        "unit": ""
+      },
+      "blockName": {
+        "label": "Block Name",
+        "value": "block",
+        "unit": ""
+      },
+      "amps": {
+        "label": "Overall Amps",
+        "value": 12.852666854858398,
+        "unit": "A"
+      },
+      "kwh": {
+        "label": "Total Energy (kWh)",
+        "value": 628,
+        "unit": "kWh"
+      },
+      "hz": {
+        "label": "Frequency",
+        "value": 49.9900016784668,
+        "unit": "Hz"
+      },
+      "pf": {
+        "label": "Power Factor",
+        "value": 0.5485437512397766,
+        "unit": ""
+      },
+      "voltageAvg": {
+        "label": "Voltage Avg",
+        "value": 0,
+        "unit": "V"
+      },
+      "llAvg": {
+        "label": "LL Voltage Avg",
+        "value": 397.75604248046875,
+        "unit": "V"
+      },
+      "l1": {
+        "label": "L1 Voltage",
+        "value": 230.0800018310547,
+        "unit": "V"
+      },
+      "l2": {
+        "label": "L2 Voltage",
+        "value": 231.239990234375,
+        "unit": "V"
+      },
+      "l3": {
+        "label": "L3 Voltage",
+        "value": 227.61001586914062,
+        "unit": "V"
+      },
+      "l12": {
+        "label": "L12 Line Voltage",
+        "value": 399.5152587890625,
+        "unit": "V"
+      },
+      "l23": {
+        "label": "L23 Line Voltage",
+        "value": 397.3798828125,
+        "unit": "V"
+      },
+      "l31": {
+        "label": "L31 Line Voltage",
+        "value": 396.37310791015625,
+        "unit": "V"
+      },
+      "l1Amps": {
+        "label": "L1 Amps",
+        "value": 13.043999671936035,
+        "unit": "A"
+      },
+      "l2Amps": {
+        "label": "L2 Amps",
+        "value": 13.3100004196167,
+        "unit": "A"
+      },
+      "l3Amps": {
+        "label": "L3 Amps",
+        "value": 12.204000473022461,
+        "unit": "A"
+      },
+      "l1Pf": {
+        "label": "L1 Power Factor",
+        "value": 0.6129999756813049,
+        "unit": ""
+      },
+      "l2Pf": {
+        "label": "L2 Power Factor",
+        "value": 0.5260000228881836,
+        "unit": ""
+      },
+      "l3Pf": {
+        "label": "L3 Power Factor",
+        "value": 0.5230000019073486,
+        "unit": ""
+      },
+      "vBeltMotorCurrent": {
+        "label": "V-Belt Motor Current",
+        "value": 0,
+        "unit": "A"
+      },
+      "boardFeederMotorCurrent": {
+        "label": "Board Feeder Motor Current",
+        "value": 0,
+        "unit": "A"
+      },
+      "mainVibratorMotorCurrent": {
+        "label": "Main Vibrator Motor Current",
+        "value": 0,
+        "unit": "A"
+      },
+      "rackChainMotorCurrent": {
+        "label": "Rack Chain Motor Current",
+        "value": 0,
+        "unit": "A"
+      },
+      "stackerHorizontalMotorCurrent": {
+        "label": "Stacker Horizontal Motor Current",
+        "value": 0,
+        "unit": "A"
+      },
+      "stackerVerticalMotorCurrent": {
+        "label": "Stacker Vertical Motor Current",
+        "value": 0,
+        "unit": "A"
+      },
+      "tamperHeadVibratorCurrent": {
+        "label": "Tamper Head Vibrator Motor Current",
+        "value": 0,
+        "unit": "A"
+      },
+      "boardFeederActualSpeed": {
+        "label": "Board Feeder Actual Speed RPM",
+        "value": 0,
+        "unit": "RPM"
+      },
+      "mainVibratorActualSpeed": {
+        "label": "Main Vibrator Actual Speed",
+        "value": 0,
+        "unit": "RPM"
+      },
+      "rackChainMotorActualSpeed": {
+        "label": "Rack Chain Motor Actual Speed",
+        "value": 0,
+        "unit": "RPM"
+      },
+      "stackerHorizontalActualSpeed": {
+        "label": "Stacker Horizontal Actual Speed",
+        "value": 0,
+        "unit": "RPM"
+      },
+      "stackerVerticalActualSpeed": {
+        "label": "Stacker Vertical Actual Speed",
+        "value": 0,
+        "unit": "RPM"
+      },
+      "tamperHeadVibratorActualSpeed": {
+        "label": "Tamper Head Vibrator Actual Speed",
+        "value": 0,
+        "unit": "RPM"
+      },
+      "vBeltActualSpeed": {
+        "label": "V-Belt Actual Speed",
+        "value": 0,
+        "unit": "RPM"
+      },
+      "runBit_BH001": {
+        "label": "Main Vibrator Running",
+        "value": true,
+        "unit": ""
+      },
+      "runBit_BFC002": {
+        "label": "Board Feeder Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_BMH003": {
+        "label": "Base Mix Hopper Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_BMFB004": {
+        "label": "Base Mix Filler Box Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_M005": {
+        "label": "Mould Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_TH006": {
+        "label": "Tamper Head Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_FMH007": {
+        "label": "Face Mix Hopper Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_FMFB008": {
+        "label": "Face Mix Filler Box Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_FMTL009": {
+        "label": "Face Mix Table Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_VBC010": {
+        "label": "V-Belt Conveyor Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_SV011": {
+        "label": "Stacker Vertical Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_SH012": {
+        "label": "Stacker Horizontal Running",
+        "value": false,
+        "unit": ""
+      },
+      "runBit_RCC013": {
+        "label": "Rack Chain Running",
+        "value": false,
+        "unit": ""
+      },
+      "vfdFault_BH001": {
+        "label": "Main Vibrator VFD Fault",
+        "value": false,
+        "unit": ""
+      },
+      "vfdFault_BFC002": {
+        "label": "Board Feeder VFD Fault",
+        "value": false,
+        "unit": ""
+      },
+      "vfdFault_RCC013": {
+        "label": "Rack Chain VFD Fault",
+        "value": false,
+        "unit": ""
+      },
+      "vfdFault_SH012": {
+        "label": "Stacker Horizontal VFD Fault",
+        "value": false,
+        "unit": ""
+      },
+      "vfdFault_SV011": {
+        "label": "Stacker Vertical VFD Fault",
+        "value": false,
+        "unit": ""
+      },
+      "vfdFault_TH006": {
+        "label": "Tamper Head VFD Fault",
+        "value": false,
+        "unit": ""
+      },
+      "vfdFault_VBC010": {
+        "label": "V-Belt VFD Fault",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_BH001": {
+        "label": "Main Vibrator Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_BFC002": {
+        "label": "Board Feeder Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_BMFB004": {
+        "label": "Base Mix Filler Box Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_M005": {
+        "label": "Mould Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_TH006": {
+        "label": "Tamper Head Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_FMFB008": {
+        "label": "Face Mix Filler Box Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_FMTL009": {
+        "label": "Face Mix Table Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_VBC010": {
+        "label": "V-Belt Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_SV011": {
+        "label": "Stacker Vertical Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_SH012": {
+        "label": "Stacker Horizontal Stop Bit",
+        "value": false,
+        "unit": ""
+      },
+      "stopBit_RCC013": {
+        "label": "Rack Chain Stop Bit",
+        "value": false,
+        "unit": ""
+      }
+    }
+  },
+  "machines": [
+    {
+      "id": "BH-001",
+      "name": "Board Hopper",
+      "type": "Vibrator",
+      "companyId": "bricks-001",
+      "status": "running",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": 0,
+      "motorSpeedRpm": 0,
+      "runBit": true,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "BFC-002",
+      "name": "Board Feeder Conveyor",
+      "type": "Conveyor",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": 0,
+      "motorSpeedRpm": 0,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "BMH-003",
+      "name": "Base Mix Hopper",
+      "type": "Hopper",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": null,
+      "motorSpeedRpm": null,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "BMFB-004",
+      "name": "Base Mix Filler Box",
+      "type": "Filler Box",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": null,
+      "motorSpeedRpm": null,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "M-005",
+      "name": "Mould",
+      "type": "Mould",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": null,
+      "motorSpeedRpm": null,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "TH-006",
+      "name": "Tamper Head",
+      "type": "Vibrator",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": 0,
+      "motorSpeedRpm": 0,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "FMH-007",
+      "name": "Face Mix Hopper",
+      "type": "Hopper",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": null,
+      "motorSpeedRpm": null,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "FMFB-008",
+      "name": "Face Mix Filler Box",
+      "type": "Filler Box",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": null,
+      "motorSpeedRpm": null,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "FMTL-009",
+      "name": "Face Mix Table Lifter",
+      "type": "Lifter",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": null,
+      "motorSpeedRpm": null,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "VBC-010",
+      "name": "V-Belt Conveyor",
+      "type": "Conveyor",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": 0,
+      "motorSpeedRpm": 0,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "SV-011",
+      "name": "Stacker Vertical",
+      "type": "Stacker",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": 0,
+      "motorSpeedRpm": 0,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "SH-012",
+      "name": "Stacker Horizontal",
+      "type": "Stacker",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": 0,
+      "motorSpeedRpm": 0,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    },
+    {
+      "id": "RCC-013",
+      "name": "Rack Chain Conveyor",
+      "type": "Conveyor",
+      "companyId": "bricks-001",
+      "status": "stopped",
+      "cycleCount": 0,
+      "cureCycleTime": 0,
+      "efficiency": 0,
+      "motorCurrent": 0,
+      "motorSpeedRpm": 0,
+      "runBit": false,
+      "vfdFault": false,
+      "stopBit": false,
+      "downtimeMinutes": 0,
+      "startCount": 0,
+      "stopCount": 0,
+      "adminDisabled": false
+    }
+  ],
+  "alerts": [],
+  "adminOverrides": {
+    "BH-001": true
+  }
+}

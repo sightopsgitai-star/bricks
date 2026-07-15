@@ -1,0 +1,34 @@
+'use strict';
+
+const { Pool } = require('pg');
+require('dotenv').config();
+
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 5432,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+async function run() {
+  const client = await pool.connect();
+  try {
+    console.log('[DB] Checking table row counts...');
+    const tables = ['users', 'clients', 'production_history', 'hourly_production', 'downtime_logs', 'machine_stats', 'tickets'];
+    for (const table of tables) {
+      const res = await client.query(`SELECT COUNT(*) FROM ${table}`);
+      console.log(`Table '${table}': ${res.rows[0].count} rows`);
+    }
+  } catch (err) {
+    console.error('[DB] Error checking DB:', err.message);
+  } finally {
+    client.release();
+    pool.end();
+  }
+}
+
+run();
