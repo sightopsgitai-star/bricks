@@ -19,8 +19,8 @@ jobs:
           host: ${{ secrets.AWS_EC2_HOST }}
           username: ${{ secrets.AWS_EC2_USER }}
           key: ${{ secrets.AWS_EC2_SSH_KEY }}
-          source: "aws_deploy/"
-          target: "/home/ubuntu"
+          source: "**"
+          target: "/home/ubuntu/bricks"
           overwrite: true
 
       - name: SSH to EC2 and Restart Backend
@@ -30,14 +30,16 @@ jobs:
           username: ${{ secrets.AWS_EC2_USER }}
           key: ${{ secrets.AWS_EC2_SSH_KEY }}
           script: |
-            # Navigate to the backend folder
-            cd /home/ubuntu/aws_deploy/backend
+            # Navigate to the backend folder inside the new bricks directory
+            cd /home/ubuntu/bricks/aws_deploy/backend
             
             # Install production dependencies
             npm install --production
             
             # Restart the app using PM2 (starts it if it isn't already running)
-            pm2 restart server.js || pm2 start server.js --name "bricks-backend"
+            # We delete and start to ensure PM2 updates the working directory to the new path
+            pm2 delete bricks-backend || true
+            pm2 start server.js --name "bricks-backend"
             
             # Save the PM2 process list so it restarts on system reboot
             pm2 save
