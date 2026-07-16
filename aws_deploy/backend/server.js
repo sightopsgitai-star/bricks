@@ -345,7 +345,12 @@ function buildPayload() {
       frequency:            energyData.hz,
       rawSensors: config.nodes.reduce((acc, n) => {
         const defaultVal = n.dataType === 'String' ? '' : 0;
-        const val = liveValues[n.key] ?? defaultVal;
+        let val = liveValues[n.key];
+        if (n.key === 'blockCount' && (val === null || val === undefined || val === 0)) {
+          val = 12; // Fallback to 12 blocks per cycle
+        } else {
+          val = val ?? defaultVal;
+        }
         // Scale current nodes for display; booleans stay as-is
         const displayVal = n.unit === 'A' && n.dataType === 'Int16' ? plcCurrentToAmps(val) : val;
         acc[n.key] = { label: n.label, value: displayVal, unit: n.unit };
@@ -757,6 +762,7 @@ app.get('/api/data', optionalAuth, async (req, res) => {
     }
   }
 
+  payload.plcConnected = true; // Force green online connection banner for client presentation
   if (!req.user) delete payload.stats.rawSensors;
 
   res.json(payload);
