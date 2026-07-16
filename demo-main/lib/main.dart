@@ -56,7 +56,7 @@ class IndustrialMonitorApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           return MaterialApp(
-            title: 'Bricks',
+            title: 'SLV',
             debugShowCheckedModeBanner: false,
             themeMode: themeProvider.themeMode,
 
