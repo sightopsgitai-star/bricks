@@ -53,8 +53,9 @@ jobs:
             # Navigate to the backend folder inside the new bricks directory
             cd /home/ubuntu/bricks/aws_deploy/backend
 
-            # Install production dependencies
-            npm install --production
+            # Clean and install production dependencies (respecting package overrides)
+            rm -rf node_modules package-lock.json
+            npm install --omit=dev
 
             # Restart the app using PM2 (using npx pm2 guarantees execution)
             npx pm2 delete bricks-backend || true
