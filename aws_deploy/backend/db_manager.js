@@ -7,11 +7,11 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 5432,
+  host: process.env.DB_HOST || 'database-2.c3g2ke0yoqrr.ap-south-1.rds.amazonaws.com',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'Sowkar1112',
+  database: process.env.DB_NAME || 'postgres',
+  port: parseInt(process.env.DB_PORT || '5432', 10),
   ssl: {
     rejectUnauthorized: false
   }
