@@ -21,6 +21,7 @@ yarn-error.log*
 **/.env.production.local
 **/*.env*
 **/*.ovpn
+!aws_deploy/backend/AWS-EC2-Bridge-S7-1500-mod.ovpn
 
 # IDEs and editors
 .idea/
