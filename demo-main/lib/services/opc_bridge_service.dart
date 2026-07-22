@@ -31,22 +31,26 @@ class OpcBridgeService {
   // ── Auth ───────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> login(String username, String password) async {
-    final response = await _client.post(
-      Uri.parse('${ApiConfig.baseUrl}/api/auth/login'),
-      headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: jsonEncode({'username': username, 'password': password}),
-    );
+    try {
+      final response = await _client.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/login'),
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: jsonEncode({'username': username, 'password': password}),
+      ).timeout(const Duration(seconds: 10));
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      _token = data['token'];
-      return data;
-    } else {
-      final error = jsonDecode(response.body)['message'] ?? 'Login failed';
-      throw Exception(error);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _token = data['token'];
+        return data;
+      } else {
+        final error = jsonDecode(response.body)['message'] ?? 'Login failed';
+        throw Exception(error);
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
