@@ -63,7 +63,61 @@ function formatDbDateOnly(date) {
 async function loadHistory() {
   const client = await pool.connect();
   try {
-    // Ensure energy_telemetry table exists
+    // ── 1. Create Core Database Tables ───────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS clients (
+        id             VARCHAR(50)  PRIMARY KEY,
+        name           VARCHAR(100) NOT NULL,
+        location       TEXT,
+        contact_person TEXT,
+        status         VARCHAR(20)  DEFAULT 'active',
+        target_count   INTEGER      DEFAULT 5000,
+        created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id            SERIAL       PRIMARY KEY,
+        username      VARCHAR(50)  UNIQUE NOT NULL,
+        password_hash TEXT         NOT NULL,
+        role          VARCHAR(20)  DEFAULT 'client',
+        client_id     VARCHAR(50)  REFERENCES clients(id),
+        created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS production_history (
+        id          SERIAL        PRIMARY KEY,
+        client_id   VARCHAR(50)   REFERENCES clients(id),
+        date        DATE          NOT NULL,
+        production  INTEGER       DEFAULT 0,
+        cycles      INTEGER       DEFAULT 0,
+        block_count INTEGER       DEFAULT 0,
+        downtime    INTEGER       DEFAULT 0,
+        efficiency  DECIMAL(5,2)  DEFAULT 0.0,
+        machines    INTEGER       DEFAULT 0,
+        hourly_data JSONB         DEFAULT '{}',
+        created_at  TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (client_id, date)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS hourly_production (
+        id           SERIAL       PRIMARY KEY,
+        client_id    VARCHAR(50)  NOT NULL,
+        date         DATE         NOT NULL,
+        hour         INTEGER      NOT NULL,
+        production   INTEGER      DEFAULT 0,
+        cycles       INTEGER      DEFAULT 0,
+        block_count  INTEGER      DEFAULT 0,
+        created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(client_id, date, hour)
+      );
+    `);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS energy_telemetry (
         id              SERIAL       PRIMARY KEY,
@@ -78,7 +132,6 @@ async function loadHistory() {
       );
     `);
 
-    // Ensure downtime_logs table exists
     await client.query(`
       CREATE TABLE IF NOT EXISTS downtime_logs (
         id          SERIAL      PRIMARY KEY,
@@ -90,36 +143,37 @@ async function loadHistory() {
       );
     `);
 
-    // Ensure cumulative tracking columns exist in production_history table
-    await client.query('ALTER TABLE production_history ADD COLUMN IF NOT EXISTS cumulative_cycles INTEGER DEFAULT 0');
-    await client.query('ALTER TABLE production_history ADD COLUMN IF NOT EXISTS cumulative_blocks INTEGER DEFAULT 0');
+    // ── 2. Run Safe Migrations (Best-effort column additions) ─────────────────
+    const safeMigrations = [
+      'ALTER TABLE production_history ADD COLUMN IF NOT EXISTS cumulative_cycles INTEGER DEFAULT 0',
+      'ALTER TABLE production_history ADD COLUMN IF NOT EXISTS cumulative_blocks INTEGER DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS recipe_name VARCHAR(100)',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS min_cycle_time NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS max_cycle_time NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS energy_kwh NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS overall_amps NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS power_factor NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS voltage_avg NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS ll_avg NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS hz NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l1 NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l2 NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l3 NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l12 NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l23 NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l31 NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l1_amps NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l2_amps NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l3_amps NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l1_pf NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l2_pf NUMERIC DEFAULT 0',
+      'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l3_pf NUMERIC DEFAULT 0',
+    ];
+    for (const sql of safeMigrations) {
+      try { await client.query(sql); } catch (_) {}
+    }
 
-    // Ensure hourly_production has recipe and min/max cycle time columns
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS recipe_name VARCHAR(100)');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS min_cycle_time NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS max_cycle_time NUMERIC DEFAULT 0');
-
-    // Ensure hourly_production has energy metrics columns
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS energy_kwh NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS overall_amps NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS power_factor NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS voltage_avg NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS ll_avg NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS hz NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l1 NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l2 NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l3 NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l12 NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l23 NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l31 NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l1_amps NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l2_amps NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l3_amps NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l1_pf NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l2_pf NUMERIC DEFAULT 0');
-    await client.query('ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS l3_pf NUMERIC DEFAULT 0');
-
-    // 1. Ensure Default Client exists
+    // ── 3. Ensure Default Client Exists ──────────────────────────────────────
     await client.query(`
       INSERT INTO clients (id, name, location)
       VALUES ($1, $2, $3)
