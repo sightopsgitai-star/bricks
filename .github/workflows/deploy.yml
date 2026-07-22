@@ -45,17 +45,20 @@ jobs:
           username: ${{ secrets.AWS_EC2_USER }}
           key: ${{ secrets.AWS_EC2_SSH_KEY }}
           script: |
+            # Set up PATH and load user environment for non-interactive SSH shells
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            export PATH=$PATH:$HOME/.nvm/versions/node/$(node -v 2>/dev/null)/bin:$HOME/.npm-global/bin:/usr/local/bin:/usr/bin
+
             # Navigate to the backend folder inside the new bricks directory
             cd /home/ubuntu/bricks/aws_deploy/backend
-            
+
             # Install production dependencies
             npm install --production
-            
-            # Restart the app using PM2 (starts it if it isn't already running)
-            # We delete and start to ensure PM2 updates the working directory to the new path
-            pm2 delete bricks-backend || true
-            pm2 start server.js --name "bricks-backend"
-            
-            # Save the PM2 process list so it restarts on system reboot
-            pm2 save
+
+            # Restart the app using PM2 (using npx pm2 guarantees execution)
+            npx pm2 delete bricks-backend || true
+            npx pm2 start server.js --name "bricks-backend"
+            npx pm2 save
+
 
