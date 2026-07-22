@@ -4,14 +4,12 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'database-2.c3g2ke0yoqrr.ap-south-1.rds.amazonaws.com',
+  host: process.env.DB_HOST || '127.0.0.1',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'Sowkar1112',
   database: process.env.DB_NAME || 'postgres',
   port: parseInt(process.env.DB_PORT || '5432', 10),
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: process.env.DB_HOST ? { rejectUnauthorized: false } : false
 });
 
 async function initDb() {
