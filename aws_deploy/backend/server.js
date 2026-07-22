@@ -1042,14 +1042,20 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
 /** Auth */
 app.post('/api/auth/login', async (req, res) => {
+  const username = req.body ? req.body.username : undefined;
+  console.log(`[API] Login request received for username: "${username}"`);
   try {
-    const user = await dbManager.verifyUser(req.body.username, req.body.password);
-    if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    const user = await dbManager.verifyUser(username, req.body ? req.body.password : undefined);
+    if (!user) {
+      console.log(`[API] Login failed (Invalid credentials) for username: "${username}"`);
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
 
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role, clientId: user.clientId },
       JWT_SECRET, { expiresIn: '24h' }
     );
+    console.log(`[API] Login successful for username: "${username}" (role: ${user.role})`);
     res.json({ success: true, token, user: { name: user.username, role: user.role, clientId: user.clientId } });
   } catch (err) {
     console.error('[API] Login error:', err.message);
