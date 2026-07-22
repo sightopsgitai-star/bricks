@@ -1052,6 +1052,11 @@ app.post('/api/auth/login', async (req, res) => {
   res.json({ success: true, token, user: { name: user.username, role: user.role, clientId: user.clientId } });
 });
 
+/** Health check endpoint */
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), service: 'bricks-backend' });
+});
+
 /** Catch-all → Flutter SPA */
 app.get('*', (_req, res) => res.sendFile(path.join(webBuildPath, 'index.html')));
 

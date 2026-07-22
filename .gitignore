@@ -42,3 +42,8 @@ demo-main/**/build/
 **/.pub-cache/
 **/.pub/
 **/pubspec.lock.g.dart
+
+# Chat history & logs
+chat_history.txt
+*.log
+
