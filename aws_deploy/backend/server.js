@@ -27,13 +27,16 @@ const COMPANY_ID = process.env.COMPANY_ID || 'bricks-001';
 app.use(cors());
 app.use(express.json());
 
-// Serve Flutter web build from sibling folder (handles both development and deployment layouts)
+// Serve Flutter web build from demo-main or frontend
 const fs = require('fs');
-let webBuildPath = path.join(__dirname, '..', 'demo-main', 'build', 'web');
-const altWebBuildPath = path.join(__dirname, '..', 'frontend', 'build', 'web');
-if (!fs.existsSync(webBuildPath) && fs.existsSync(altWebBuildPath)) {
-  webBuildPath = altWebBuildPath;
+let webBuildPath = path.join(__dirname, '..', '..', 'demo-main', 'build', 'web');
+if (!fs.existsSync(webBuildPath)) {
+  webBuildPath = path.join(__dirname, '..', 'demo-main', 'build', 'web');
 }
+if (!fs.existsSync(webBuildPath)) {
+  webBuildPath = path.join(__dirname, '..', 'frontend', 'build', 'web');
+}
+console.log(`[SERVER] Serving Flutter static web files from: ${webBuildPath}`);
 app.use(express.static(webBuildPath));
 
 // ─── Auth Middleware ─────────────────────────────────────────────────────────
