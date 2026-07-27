@@ -89,9 +89,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 48),
                   // Login form card
                   _buildLoginCard(),
-                  const SizedBox(height: 24),
-                  // Demo credentials hint
-                  _buildCredentialsHint(),
                 ],
               ),
             ),

@@ -385,6 +385,8 @@ opcClient.on('backoff', (n, delay)       =>  console.log(`[PLC] Retry #${n} in $
 
 let activeSession = null;
 
+let prevNetworkCommState = null;
+
 async function pollOnce() {
   if (!activeSession) return;
 
@@ -397,6 +399,19 @@ async function pollOnce() {
         liveValues[k] = dv.value.value;
       }
     });
+
+    // Check Network Communication OK status (ns=4;i=723)
+    const netCommOk = liveValues['networkCommunicationOk'] === true || liveValues['networkCommunicationOk'] === 1;
+    if (prevNetworkCommState !== null && netCommOk !== prevNetworkCommState) {
+      const statusLabel = netCommOk ? 'RESTORED / MACHINE RUNNING' : 'INTERRUPTED / MACHINE STOPPED';
+      console.log(`[PLC] Alert: Network Communication OK (ns=4;i=723) changed state to: ${netCommOk ? 'TRUE' : 'FALSE'} (${statusLabel})`);
+      dbManager.createTicket(
+        COMPANY_ID,
+        `Network Communication ${netCommOk ? 'Restored' : 'Interrupted'} (ns=4;i=723)`,
+        `Client "${COMPANY_ID}" machine network communication status (ns=4;i=723) changed to ${netCommOk ? 'OK (Machine Running)' : 'NOT OK (Machine Interrupted)'} at ${new Date().toLocaleString()}.`
+      ).catch(err => console.error('[PLC] Failed to create network comm ticket:', err.message));
+    }
+    prevNetworkCommState = netCommOk;
 
     // Detect cycle change for lineIsActive()
     const curCycle = Math.max(safeInt(liveValues['systemTotalCycle']), safeInt(liveValues['systemTotalCycle2']));

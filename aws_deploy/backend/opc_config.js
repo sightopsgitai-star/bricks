@@ -21,6 +21,7 @@ module.exports = {
   // ── Node List ─────────────────────────────────────────────────────────────
   nodes: [
     // ── Production counters ───────────────────────────────────────────────
+    { key: 'networkCommunicationOk',     nodeId: 'ns=4;i=723', label: 'NETWORK COMMUNICATION OK',     unit: '',       dataType: 'Boolean' },
     { key: 'systemTotalCycle',         nodeId: 'ns=4;i=63',  label: 'System Total Cycle',           unit: 'cycles', dataType: 'UInt32' },
     { key: 'systemTotalCycle2',        nodeId: 'ns=4;i=96',  label: 'System Total Cycle (alt)',      unit: 'cycles', dataType: 'UInt32' },
     { key: 'blockCount',               nodeId: 'ns=4;i=237', label: 'Block Count',                  unit: 'blocks', dataType: 'Int16'  },

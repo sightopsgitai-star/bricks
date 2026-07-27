@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../widgets/responsive.dart';
@@ -115,15 +116,26 @@ class _TicketsScreenState extends State<TicketsScreen> {
           ElevatedButton(
             onPressed: () async {
               if (titleController.text.isNotEmpty) {
+                final title = titleController.text.trim();
+                final desc = descController.text.trim();
                 final success = await context.read<TicketProvider>().createTicket(
-                  titleController.text,
-                  descController.text,
+                  title,
+                  desc,
                 );
                 if (success && context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ticket raised successfully!')),
+                    const SnackBar(content: Text('Ticket raised successfully! Opening WhatsApp...'), backgroundColor: Colors.green),
                   );
+
+                  // Send message to Admin WhatsApp
+                  final text = "🚨 *Support Ticket Raised*\n\n*Title:* $title\n*Description:* ${desc.isNotEmpty ? desc : 'N/A'}\n*Date:* ${DateTime.now().toString().split('.')[0]}";
+                  final whatsappUrl = Uri.parse("https://api.whatsapp.com/send?text=${Uri.encodeComponent(text)}");
+                  try {
+                    if (await canLaunchUrl(whatsappUrl)) {
+                      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                    }
+                  } catch (_) {}
                 }
               }
             },

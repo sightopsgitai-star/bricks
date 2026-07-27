@@ -47,8 +47,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(height: 16),
                           _buildCompanyInfoCard(profile.companyInfo),
                           const SizedBox(height: 16),
-                          _buildSimRechargeCard(profile.simInfo),
-                          const SizedBox(height: 16),
                           _buildSupportTicketCard(),
                           const SizedBox(height: 80),
                         ],
@@ -74,8 +72,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Expanded(
                                 child: Column(
                                   children: [
-                                    HoverGlowCard(child: _buildSimRechargeCard(profile.simInfo)),
-                                    const SizedBox(height: 16),
                                     HoverGlowCard(child: _buildSupportTicketCard()),
                                   ],
                                 ),
