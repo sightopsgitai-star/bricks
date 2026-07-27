@@ -68,6 +68,7 @@ async function loadHistory() {
         name           VARCHAR(100) NOT NULL,
         location       TEXT,
         contact_person TEXT,
+        email          TEXT,
         status         VARCHAR(20)  DEFAULT 'active',
         target_count   INTEGER      DEFAULT 5000,
         created_at     TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
@@ -79,6 +80,7 @@ async function loadHistory() {
         id            SERIAL       PRIMARY KEY,
         username      VARCHAR(50)  UNIQUE NOT NULL,
         password_hash TEXT         NOT NULL,
+        plain_password TEXT,
         role          VARCHAR(20)  DEFAULT 'client',
         client_id     VARCHAR(50)  REFERENCES clients(id),
         created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
@@ -143,6 +145,11 @@ async function loadHistory() {
 
     // ── 2. Run Safe Migrations (Best-effort column additions) ─────────────────
     const safeMigrations = [
+      'ALTER TABLE clients ADD COLUMN IF NOT EXISTS target_count INTEGER DEFAULT 5000',
+      'ALTER TABLE clients ADD COLUMN IF NOT EXISTS contact_person TEXT',
+      'ALTER TABLE clients ADD COLUMN IF NOT EXISTS email TEXT',
+      'ALTER TABLE users ADD COLUMN IF NOT EXISTS client_id VARCHAR(50)',
+      'ALTER TABLE users ADD COLUMN IF NOT EXISTS plain_password TEXT',
       'ALTER TABLE production_history ADD COLUMN IF NOT EXISTS cumulative_cycles INTEGER DEFAULT 0',
       'ALTER TABLE production_history ADD COLUMN IF NOT EXISTS cumulative_blocks INTEGER DEFAULT 0',
       'ALTER TABLE hourly_production ADD COLUMN IF NOT EXISTS recipe_name VARCHAR(100)',
