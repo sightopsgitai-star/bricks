@@ -227,7 +227,11 @@ async function loadHistory() {
       try { await client.query(sql); } catch (_) {}
     }
 
-    // ── 3. Ensure Default Client Exists ──────────────────────────────────────
+    // ── 3. Clean up automated pulse tickets & Ensure Default Client Exists ───
+    try {
+      await client.query("DELETE FROM tickets WHERE title LIKE 'Network Communication%'");
+    } catch (_) {}
+
     await client.query(`
       INSERT INTO clients (id, name, location)
       VALUES ($1, $2, $3)

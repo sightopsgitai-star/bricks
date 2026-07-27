@@ -438,12 +438,7 @@ async function pollOnce() {
     const netCommOk = liveValues['networkCommunicationOk'] === true || liveValues['networkCommunicationOk'] === 1;
     if (prevNetworkCommState !== null && netCommOk !== prevNetworkCommState) {
       const statusLabel = netCommOk ? 'RESTORED / MACHINE RUNNING' : 'INTERRUPTED / MACHINE STOPPED';
-      console.log(`[PLC] Alert: Network Communication OK (ns=4;i=723) changed state to: ${netCommOk ? 'TRUE' : 'FALSE'} (${statusLabel})`);
-      dbManager.createTicket(
-        COMPANY_ID,
-        `Network Communication ${netCommOk ? 'Restored' : 'Interrupted'} (ns=4;i=723)`,
-        `Client "${COMPANY_ID}" machine network communication status (ns=4;i=723) changed to ${netCommOk ? 'OK (Machine Running)' : 'NOT OK (Machine Interrupted)'} at ${new Date().toLocaleString()}.`
-      ).catch(err => console.error('[PLC] Failed to create network comm ticket:', err.message));
+      console.log(`[PLC] Network Communication OK (ns=4;i=723) changed state to: ${netCommOk ? 'TRUE' : 'FALSE'} (${statusLabel})`);
     }
     prevNetworkCommState = netCommOk;
 
@@ -999,11 +994,6 @@ app.post('/api/admin/network-comm', requireAuth, async (req, res) => {
   if (typeof enabled === 'boolean' && prevNetworkCommState !== enabled) {
     const statusLabel = enabled ? 'RESTORED / MACHINE RUNNING' : 'INTERRUPTED / MACHINE STOPPED';
     console.log(`[ADMIN OVERRIDE] Network Communication OK (ns=4;i=723) set to: ${enabled ? 'TRUE' : 'FALSE'} (${statusLabel})`);
-    dbManager.createTicket(
-      COMPANY_ID,
-      `Network Communication ${enabled ? 'Restored' : 'Interrupted'} (Admin Override)`,
-      `Admin set network communication status (ns=4;i=723) to ${enabled ? 'OK (Machine Running)' : 'NOT OK (Machine Interrupted)'} at ${new Date().toLocaleString()}.`
-    ).catch(() => {});
     prevNetworkCommState = enabled;
   }
 
