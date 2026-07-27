@@ -175,15 +175,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildOverview(ThemeData theme, TicketProvider ticketProvider) {
     final commOk = _clients.isNotEmpty && _clients.every((c) => c.networkCommunicationOk);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Row(
       children: [
         _StatItem(label: 'Total Clients', value: _clients.length.toString(), icon: Icons.business),
         const SizedBox(width: 12),
-        _StatItem(
-            label: 'Net Comm (ns=4;i=723)',
-            value: commOk ? 'OK' : 'INTERRUPTED',
-            icon: commOk ? Icons.cell_tower : Icons.portable_wifi_off,
-            color: commOk ? Colors.greenAccent : Colors.redAccent),
+        _NetworkCommStatItem(
+          commOk: commOk,
+          isDark: isDark,
+          onToggle: (newValue) async {
+            try {
+              final bridge = OpcBridgeService();
+              final success = await bridge.toggleNetworkCommunication(newValue);
+              if (mounted && success) {
+                _loadData();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Network Communication (ns=4;i=723) bit set to: ${newValue ? "TRUE (1)" : "FALSE (0)"}'),
+                    backgroundColor: newValue ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                );
+              }
+            }
+          },
+        ),
         const SizedBox(width: 12),
         _StatItem(
             label: 'Open Tickets',
@@ -1346,6 +1368,95 @@ class _LegendChip extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
+    );
+  }
+}
+
+class _NetworkCommStatItem extends StatelessWidget {
+  final bool commOk;
+  final bool isDark;
+  final ValueChanged<bool> onToggle;
+
+  const _NetworkCommStatItem({
+    required this.commOk,
+    required this.isDark,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = commOk ? Colors.greenAccent : Colors.redAccent;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.4),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Icon(
+                commOk ? Icons.cell_tower : Icons.portable_wifi_off,
+                color: statusColor,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Net Comm (ns=4;i=723)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white70 : Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    commOk ? 'OK (TRUE)' : 'INTERRUPTED (FALSE)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Bit Value: ${commOk ? "true (1)" : "false (0)"}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? Colors.grey : Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              Transform.scale(
+                scale: 0.8,
+                child: Switch(
+                  value: commOk,
+                  activeColor: Colors.greenAccent,
+                  inactiveThumbColor: Colors.redAccent,
+                  onChanged: onToggle,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

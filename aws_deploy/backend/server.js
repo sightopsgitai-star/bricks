@@ -891,19 +891,87 @@ app.post('/api/downtime', requireAuth, async (req, res) => {
   }
 });
 
+/** Write to OPC-UA node helper */
+async function writeOpcNode(nodeIdStr, value, dataTypeStr = 'Boolean') {
+  if (!activeSession) {
+    console.warn(`[PLC] Session not active. Updated in-memory liveValues['${nodeIdStr}'] = ${value}`);
+    return false;
+  }
+  try {
+    let dt = DataType.Boolean;
+    if (dataTypeStr === 'Int16') dt = DataType.Int16;
+    if (dataTypeStr === 'UInt16') dt = DataType.UInt16;
+    if (dataTypeStr === 'UInt32') dt = DataType.UInt32;
+    if (dataTypeStr === 'Float') dt = DataType.Float;
+
+    const statusCode = await activeSession.write({
+      nodeId: nodeIdStr,
+      attributeId: AttributeIds.Value,
+      value: {
+        value: {
+          dataType: dt,
+          value: value
+        }
+      }
+    });
+    console.log(`[PLC] Wrote node ${nodeIdStr} = ${value} → StatusCode: ${statusCode.toString()}`);
+    return true;
+  } catch (err) {
+    console.error(`[PLC] Failed to write node ${nodeIdStr}:`, err.message);
+    return false;
+  }
+}
+
 /** Admin — Clients */
 app.get('/api/admin/clients', requireAuth, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
     const clients = await dbManager.getAllClients();
-    const netCommOk = liveValues['networkCommunicationOk'] === true || liveValues['networkCommunicationOk'] === 1;
+    const rawVal = liveValues['networkCommunicationOk'];
+    const netCommOk = rawVal === true || rawVal === 1;
     const data = clients.map(c => ({
       ...c,
-      networkCommunicationOk: netCommOk
+      networkCommunicationOk: netCommOk,
+      rawNetworkCommBit: rawVal ?? false
     }));
-    res.json({ success: true, data });
+    res.json({
+      success: true,
+      networkCommunicationOk: netCommOk,
+      rawNetworkCommBit: rawVal ?? false,
+      data
+    });
   }
   catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+/** Admin — Toggle Network Communication Bit ns=4;i=723 */
+app.post('/api/admin/network-comm', requireAuth, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const { enabled } = req.body;
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'enabled (boolean) is required' });
+  }
+
+  liveValues['networkCommunicationOk'] = enabled;
+  const wrotePlc = await writeOpcNode('ns=4;i=723', enabled, 'Boolean');
+
+  if (prevNetworkCommState !== enabled) {
+    const statusLabel = enabled ? 'RESTORED / MACHINE RUNNING' : 'INTERRUPTED / MACHINE STOPPED';
+    console.log(`[ADMIN OVERRIDE] Network Communication OK (ns=4;i=723) set to: ${enabled ? 'TRUE' : 'FALSE'} (${statusLabel})`);
+    dbManager.createTicket(
+      COMPANY_ID,
+      `Network Communication ${enabled ? 'Restored' : 'Interrupted'} (Admin Override)`,
+      `Admin toggled network communication status (ns=4;i=723) to ${enabled ? 'OK (Machine Running)' : 'NOT OK (Machine Interrupted)'} at ${new Date().toLocaleString()}.`
+    ).catch(() => {});
+    prevNetworkCommState = enabled;
+  }
+
+  res.json({
+    success: true,
+    networkCommunicationOk: enabled,
+    wrotePlc,
+    message: `Network Communication (ns=4;i=723) set to ${enabled ? 'TRUE (OK)' : 'FALSE (INTERRUPTED)'}`
+  });
 });
 
 app.post('/api/admin/clients', requireAuth, async (req, res) => {

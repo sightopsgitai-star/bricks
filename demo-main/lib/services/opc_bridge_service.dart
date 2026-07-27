@@ -200,6 +200,21 @@ class OpcBridgeService {
     }
   }
 
+  /// Toggles Network Communication bit ns=4;i=723 (admin only).
+  Future<bool> toggleNetworkCommunication(bool enabled) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/admin/network-comm'),
+        headers: _headers,
+        body: jsonEncode({'enabled': enabled}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      if (kDebugMode) print('[BRIDGE] Error toggling network comm: $e');
+      return false;
+    }
+  }
+
   /// Creates a new client with generated password (admin only).
   Future<Map<String, dynamic>> addClient(String name, String email, List<String> machines) async {
     final response = await _client.post(
