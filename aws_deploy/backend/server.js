@@ -389,6 +389,22 @@ opcClient.on('backoff', (n, delay)       =>  console.log(`[PLC] Retry #${n} in $
 let activeSession = null;
 
 let prevNetworkCommState = null;
+let netCommAutoPulse = true;
+let lastNetCommPulseAt = new Date().toISOString();
+
+// ─── 30-Second Pulse Loop for Network Communication Node ns=4;i=723 ────────────
+setInterval(async () => {
+  if (!netCommAutoPulse) return;
+  const currentVal = liveValues['networkCommunicationOk'] === true || liveValues['networkCommunicationOk'] === 1;
+  const nextVal = !currentVal;
+  liveValues['networkCommunicationOk'] = nextVal;
+  lastNetCommPulseAt = new Date().toISOString();
+  console.log(`[PLC PULSE] 30-Second Pulse Triggered: ns=4;i=723 flipped to ${nextVal ? 'TRUE (1)' : 'FALSE (0)'}`);
+  
+  if (plcConnected && activeSession) {
+    await writeOpcNode('ns=4;i=723', nextVal, 'Boolean').catch(() => {});
+  }
+}, 30 * 1000); // 30,000 ms = 30 Seconds Pulse Cycle
 
 async function pollOnce() {
   if (!activeSession) return;
@@ -932,45 +948,56 @@ app.get('/api/admin/clients', requireAuth, async (req, res) => {
     const data = clients.map(c => ({
       ...c,
       networkCommunicationOk: netCommOk,
-      rawNetworkCommBit: rawVal ?? false
+      rawNetworkCommBit: rawVal ?? false,
+      autoPulse: netCommAutoPulse,
+      lastPulseAt: lastNetCommPulseAt,
     }));
     res.json({
       success: true,
       networkCommunicationOk: netCommOk,
       rawNetworkCommBit: rawVal ?? false,
+      autoPulse: netCommAutoPulse,
+      lastPulseAt: lastNetCommPulseAt,
       data
     });
   }
   catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
-/** Admin — Toggle Network Communication Bit ns=4;i=723 */
+/** Admin — Toggle Network Communication Bit ns=4;i=723 & 1-Min Pulse Loop */
 app.post('/api/admin/network-comm', requireAuth, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { enabled } = req.body;
-  if (typeof enabled !== 'boolean') {
-    return res.status(400).json({ success: false, message: 'enabled (boolean) is required' });
+  const { enabled, autoPulse } = req.body;
+  
+  if (typeof autoPulse === 'boolean') {
+    netCommAutoPulse = autoPulse;
   }
 
-  liveValues['networkCommunicationOk'] = enabled;
-  const wrotePlc = await writeOpcNode('ns=4;i=723', enabled, 'Boolean');
+  if (typeof enabled === 'boolean') {
+    liveValues['networkCommunicationOk'] = enabled;
+    lastNetCommPulseAt = new Date().toISOString();
+    await writeOpcNode('ns=4;i=723', enabled, 'Boolean');
+  }
 
-  if (prevNetworkCommState !== enabled) {
+  const currentVal = liveValues['networkCommunicationOk'] === true || liveValues['networkCommunicationOk'] === 1;
+
+  if (typeof enabled === 'boolean' && prevNetworkCommState !== enabled) {
     const statusLabel = enabled ? 'RESTORED / MACHINE RUNNING' : 'INTERRUPTED / MACHINE STOPPED';
     console.log(`[ADMIN OVERRIDE] Network Communication OK (ns=4;i=723) set to: ${enabled ? 'TRUE' : 'FALSE'} (${statusLabel})`);
     dbManager.createTicket(
       COMPANY_ID,
       `Network Communication ${enabled ? 'Restored' : 'Interrupted'} (Admin Override)`,
-      `Admin toggled network communication status (ns=4;i=723) to ${enabled ? 'OK (Machine Running)' : 'NOT OK (Machine Interrupted)'} at ${new Date().toLocaleString()}.`
+      `Admin set network communication status (ns=4;i=723) to ${enabled ? 'OK (Machine Running)' : 'NOT OK (Machine Interrupted)'} at ${new Date().toLocaleString()}.`
     ).catch(() => {});
     prevNetworkCommState = enabled;
   }
 
   res.json({
     success: true,
-    networkCommunicationOk: enabled,
-    wrotePlc,
-    message: `Network Communication (ns=4;i=723) set to ${enabled ? 'TRUE (OK)' : 'FALSE (INTERRUPTED)'}`
+    networkCommunicationOk: currentVal,
+    autoPulse: netCommAutoPulse,
+    lastPulseAt: lastNetCommPulseAt,
+    message: `Network Communication (ns=4;i=723) set to ${currentVal ? 'TRUE (OK)' : 'FALSE (INTERRUPTED)'}, 1-min pulse: ${netCommAutoPulse ? 'ACTIVE' : 'PAUSED'}`
   });
 });
 

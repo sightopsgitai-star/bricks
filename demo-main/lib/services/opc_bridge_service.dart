@@ -200,13 +200,17 @@ class OpcBridgeService {
     }
   }
 
-  /// Toggles Network Communication bit ns=4;i=723 (admin only).
-  Future<bool> toggleNetworkCommunication(bool enabled) async {
+  /// Toggles Network Communication bit ns=4;i=723 & 1-min pulse mode (admin only).
+  Future<bool> toggleNetworkCommunication({bool? enabled, bool? autoPulse}) async {
     try {
+      final bodyMap = <String, dynamic>{};
+      if (enabled != null) bodyMap['enabled'] = enabled;
+      if (autoPulse != null) bodyMap['autoPulse'] = autoPulse;
+
       final response = await _client.post(
         Uri.parse('${ApiConfig.baseUrl}/api/admin/network-comm'),
         headers: _headers,
-        body: jsonEncode({'enabled': enabled}),
+        body: jsonEncode(bodyMap),
       );
       return response.statusCode == 200;
     } catch (e) {

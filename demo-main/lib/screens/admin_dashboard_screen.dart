@@ -187,7 +187,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           onToggle: (newValue) async {
             try {
               final bridge = OpcBridgeService();
-              final success = await bridge.toggleNetworkCommunication(newValue);
+              final success = await bridge.toggleNetworkCommunication(enabled: newValue);
               if (mounted && success) {
                 _loadData();
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1415,6 +1415,26 @@ class _NetworkCommStatItem extends StatelessWidget {
                   fontSize: 12,
                   color: isDark ? Colors.white70 : Colors.white,
                   fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blueAccent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.5)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.bolt, size: 10, color: Colors.blueAccent),
+                    SizedBox(width: 2),
+                    Text(
+                      '30s Pulse',
+                      style: TextStyle(fontSize: 9, color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
             ],
