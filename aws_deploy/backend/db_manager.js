@@ -143,6 +143,55 @@ async function loadHistory() {
       );
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS machine_stats (
+        id              SERIAL        PRIMARY KEY,
+        client_id       VARCHAR(50)   REFERENCES clients(id),
+        machine_id      VARCHAR(50)   NOT NULL,
+        status          VARCHAR(20),
+        motor_current   DECIMAL(8,2),
+        motor_speed_rpm DECIMAL(8,2),
+        last_cycle_time DECIMAL(10,2),
+        total_cycles    INTEGER,
+        last_updated    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (client_id, machine_id)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS tickets (
+        id              SERIAL      PRIMARY KEY,
+        client_id       VARCHAR(50) REFERENCES clients(id),
+        title           TEXT        NOT NULL,
+        description     TEXT,
+        status          VARCHAR(20) DEFAULT 'open',
+        created_at      TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+        acknowledged_at TIMESTAMP,
+        resolved_at     TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS machine_overrides (
+        id         SERIAL      PRIMARY KEY,
+        client_id  VARCHAR(50) REFERENCES clients(id) ON DELETE CASCADE,
+        machine_id VARCHAR(50) NOT NULL,
+        enabled    BOOLEAN     DEFAULT TRUE,
+        updated_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (client_id, machine_id)
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS password_reset_requests (
+        id         SERIAL      PRIMARY KEY,
+        username   VARCHAR(50) NOT NULL,
+        client_id  VARCHAR(50),
+        status     VARCHAR(20) DEFAULT 'pending',
+        created_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // ── 2. Run Safe Migrations (Best-effort column additions) ─────────────────
     const safeMigrations = [
       'ALTER TABLE clients ADD COLUMN IF NOT EXISTS target_count INTEGER DEFAULT 5000',
