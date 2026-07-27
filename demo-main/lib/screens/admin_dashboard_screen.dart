@@ -1431,7 +1431,7 @@ class _NetworkCommStatItem extends StatelessWidget {
                     Icon(Icons.bolt, size: 10, color: Colors.blueAccent),
                     SizedBox(width: 2),
                     Text(
-                      '30s Pulse',
+                      '2s ON / 1m OFF',
                       style: TextStyle(fontSize: 9, color: Colors.blueAccent, fontWeight: FontWeight.bold),
                     ),
                   ],

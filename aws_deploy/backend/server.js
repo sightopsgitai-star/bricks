@@ -392,19 +392,34 @@ let prevNetworkCommState = null;
 let netCommAutoPulse = true;
 let lastNetCommPulseAt = new Date().toISOString();
 
-// ─── 30-Second Pulse Loop for Network Communication Node ns=4;i=723 ────────────
-setInterval(async () => {
+// ─── Pulse Loop for Network Communication Node ns=4;i=723 (TRUE for 2s, FALSE for 60s) ───
+async function triggerNetCommPulse() {
   if (!netCommAutoPulse) return;
-  const currentVal = liveValues['networkCommunicationOk'] === true || liveValues['networkCommunicationOk'] === 1;
-  const nextVal = !currentVal;
-  liveValues['networkCommunicationOk'] = nextVal;
-  lastNetCommPulseAt = new Date().toISOString();
-  console.log(`[PLC PULSE] 30-Second Pulse Triggered: ns=4;i=723 flipped to ${nextVal ? 'TRUE (1)' : 'FALSE (0)'}`);
   
+  // 1. Set TRUE (ON) for 2 seconds
+  liveValues['networkCommunicationOk'] = true;
+  lastNetCommPulseAt = new Date().toISOString();
+  console.log(`[PLC PULSE] Pulse ON (2s) — ns=4;i=723 = TRUE (1)`);
   if (plcConnected && activeSession) {
-    await writeOpcNode('ns=4;i=723', nextVal, 'Boolean').catch(() => {});
+    await writeOpcNode('ns=4;i=723', true, 'Boolean').catch(() => {});
   }
-}, 30 * 1000); // 30,000 ms = 30 Seconds Pulse Cycle
+
+  // 2. Wait 2s, then set FALSE (OFF) for 60 seconds (1 minute)
+  setTimeout(async () => {
+    if (!netCommAutoPulse) return;
+    liveValues['networkCommunicationOk'] = false;
+    lastNetCommPulseAt = new Date().toISOString();
+    console.log(`[PLC PULSE] Pulse OFF (60s) — ns=4;i=723 = FALSE (0)`);
+    if (plcConnected && activeSession) {
+      await writeOpcNode('ns=4;i=723', false, 'Boolean').catch(() => {});
+    }
+  }, 2 * 1000); // 2 Seconds ON Duration
+}
+
+// Repeat every 62 seconds (2s ON + 60s OFF)
+setInterval(triggerNetCommPulse, 62 * 1000);
+// Trigger initial pulse on boot
+triggerNetCommPulse();
 
 async function pollOnce() {
   if (!activeSession) return;
