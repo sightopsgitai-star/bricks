@@ -128,9 +128,20 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     const SnackBar(content: Text('Ticket raised successfully! Opening WhatsApp...'), backgroundColor: Colors.green),
                   );
 
-                  // Send message to Admin WhatsApp
-                  final text = "🚨 *Support Ticket Raised*\n\n*Title:* $title\n*Description:* ${desc.isNotEmpty ? desc : 'N/A'}\n*Date:* ${DateTime.now().toString().split('.')[0]}";
-                  final whatsappUrl = Uri.parse("https://api.whatsapp.com/send?text=${Uri.encodeComponent(text)}");
+                  // Send message to Admin WhatsApp: 916369462210
+                  final authProvider = context.read<AuthProvider>();
+                  final companyProvider = context.read<CompanyProvider>();
+                  final clientName = companyProvider.selectedCompany?.name ?? 'Client';
+                  final clientId = companyProvider.selectedCompany?.id ?? authProvider.clientId ?? 'N/A';
+
+                  final text = "🚨 *Support Ticket Raised*\n\n"
+                               "🏢 *Client Name:* $clientName\n"
+                               "🆔 *Client ID:* $clientId\n"
+                               "📌 *Title:* $title\n"
+                               "📝 *Description:* ${desc.isNotEmpty ? desc : 'N/A'}\n"
+                               "📅 *Date:* ${DateTime.now().toString().split('.')[0]}";
+
+                  final whatsappUrl = Uri.parse("https://api.whatsapp.com/send?phone=916369462210&text=${Uri.encodeComponent(text)}");
                   try {
                     if (await canLaunchUrl(whatsappUrl)) {
                       await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
