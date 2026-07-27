@@ -236,10 +236,14 @@ async function loadHistory() {
     if (parseInt(clientRes.rows[0].count, 10) === 0) {
       const hash = await bcrypt.hash('bricks123', 10);
       await client.query(
-        'INSERT INTO users (username, password_hash, role, client_id) VALUES ($1, $2, $3, $4)',
-        ['bricks_user', hash, 'client', DEFAULT_CLIENT_ID]
+        'INSERT INTO users (username, password_hash, plain_password, role, client_id) VALUES ($1, $2, $3, $4, $5)',
+        ['bricks_user', hash, 'bricks123', 'client', DEFAULT_CLIENT_ID]
       );
       console.log('[DB] Created Bricks Client User. Username: bricks_user, Password: bricks123');
+    } else {
+      await client.query(
+        "UPDATE users SET plain_password = 'bricks123' WHERE username = 'bricks_user' AND (plain_password IS NULL OR plain_password = '')"
+      );
     }
 
     // 5. Heal historical records (copy block_count to production if production is 0)
