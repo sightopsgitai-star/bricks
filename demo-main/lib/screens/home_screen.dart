@@ -34,10 +34,14 @@ class _HomeScreenState extends State<HomeScreen> {
           final running = machines.where((m) => m.status == MachineStatus.running).length;
           final stopped = machines.where((m) => m.status == MachineStatus.stopped).length;
 
-          if (running == total) {
+          if (running > 0) {
             _wasAllActive = true;
             _popupShown = false;
-          } else if (_wasAllActive && stopped == total && !_popupShown && !_isDialogOpen) {
+            if (_isDialogOpen && Navigator.canPop(context)) {
+              _isDialogOpen = false;
+              Navigator.pop(context);
+            }
+          } else if (_wasAllActive && running == 0 && stopped == total && !_popupShown && !_isDialogOpen) {
             _popupShown = true;
             _wasAllActive = false;
             _isDialogOpen = true;

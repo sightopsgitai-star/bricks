@@ -518,7 +518,7 @@ class _EnergyScreenState extends State<EnergyScreen> with TickerProviderStateMix
 
   Widget _buildMotorCurrentsGrid(CompanyProvider provider, bool isDark) {
     final currents = provider.stats?.rawTags
-        .where((t) => t.label.toLowerCase().contains('current'))
+        .where((t) => t.unit == 'A' && t.label.toLowerCase().contains('current') && !t.label.toLowerCase().contains('cycle'))
         .toList() ?? [];
 
     if (currents.isEmpty) return const SizedBox.shrink();
