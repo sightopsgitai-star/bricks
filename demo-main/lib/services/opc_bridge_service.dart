@@ -173,6 +173,7 @@ class OpcBridgeService {
           location:      (c['location'] ?? 'Factory').toString(),
           totalMachines: 10,
           isOnline:      c['isOnline'] as bool? ?? false,
+          networkCommunicationOk: c['networkCommunicationOk'] as bool? ?? true,
           latestDowntimeReason: c['latest_downtime_reason']?.toString(),
           latestDowntimeDescription: c['latest_downtime_description']?.toString(),
           lastSeenDate:  c['last_seen_date'] != null

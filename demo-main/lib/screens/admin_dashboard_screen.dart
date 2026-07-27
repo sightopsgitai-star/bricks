@@ -174,9 +174,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildOverview(ThemeData theme, TicketProvider ticketProvider) {
+    final commOk = _clients.isNotEmpty && _clients.every((c) => c.networkCommunicationOk);
     return Row(
       children: [
         _StatItem(label: 'Total Clients', value: _clients.length.toString(), icon: Icons.business),
+        const SizedBox(width: 12),
+        _StatItem(
+            label: 'Net Comm (ns=4;i=723)',
+            value: commOk ? 'OK' : 'INTERRUPTED',
+            icon: commOk ? Icons.cell_tower : Icons.portable_wifi_off,
+            color: commOk ? Colors.greenAccent : Colors.redAccent),
         const SizedBox(width: 12),
         _StatItem(
             label: 'Open Tickets',
@@ -188,7 +195,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             label: 'In Progress',
             value: ticketProvider.inProgressTicketCount.toString(),
             icon: Icons.timer,
-            color: Colors.greenAccent),
+            color: Colors.lightBlueAccent),
         const SizedBox(width: 12),
         // ADD CLIENT CARD
         _AddClientStatItem(onTap: _showAddClientDialog),
@@ -837,9 +844,38 @@ class _ClientCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            client.location, 
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: client.networkCommunicationOk 
+                  ? Colors.green.withValues(alpha: 0.1) 
+                  : Colors.red.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: client.networkCommunicationOk 
+                    ? Colors.green.withValues(alpha: 0.3) 
+                    : Colors.red.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  client.networkCommunicationOk ? Icons.cell_tower : Icons.portable_wifi_off,
+                  size: 13,
+                  color: client.networkCommunicationOk ? Colors.green : Colors.red,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Network Comm (ns=4;i=723): ${client.networkCommunicationOk ? "OK (Running)" : "INTERRUPTED (Stopped)"}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: client.networkCommunicationOk ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
           ),
           const Spacer(),
           Row(

@@ -894,7 +894,15 @@ app.post('/api/downtime', requireAuth, async (req, res) => {
 /** Admin — Clients */
 app.get('/api/admin/clients', requireAuth, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  try { res.json({ success: true, data: await dbManager.getAllClients() }); }
+  try {
+    const clients = await dbManager.getAllClients();
+    const netCommOk = liveValues['networkCommunicationOk'] === true || liveValues['networkCommunicationOk'] === 1;
+    const data = clients.map(c => ({
+      ...c,
+      networkCommunicationOk: netCommOk
+    }));
+    res.json({ success: true, data });
+  }
   catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 

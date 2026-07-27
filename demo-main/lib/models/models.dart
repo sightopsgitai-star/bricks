@@ -10,6 +10,9 @@ class Company {
   /// True if the server received machine telemetry within the last 15 minutes.
   final bool isOnline;
 
+  /// Status of OPC-UA Node ns=4;i=723 (NETWORK COMMUNICATION OK).
+  final bool networkCommunicationOk;
+
   /// Date of the most recent production_history record for this client.
   final DateTime? lastSeenDate;
 
@@ -23,6 +26,7 @@ class Company {
     required this.location,
     required this.totalMachines,
     this.isOnline = false,
+    this.networkCommunicationOk = true,
     this.lastSeenDate,
     this.latestDowntimeReason,
     this.latestDowntimeDescription,
