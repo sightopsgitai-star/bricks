@@ -222,7 +222,9 @@ function buildPayload() {
   if (todayCycle <= 0 && yesterdayCumulative) {
     todayCycle = Math.max(0, totalCycle - yesterdayCumulative.cycles);
   }
-  const actualCount = totalBlocks > 0 ? totalBlocks : (todayCycle * blockCount);
+  if (todayCycle < 0) todayCycle = 0;
+  // Keep today's production count 0 before machine starts giving data today, then actual count after
+  const actualCount = todayCycle > 0 ? (todayCycle * blockCount) : 0;
 
   // Extract correct last completed cycle time in ms
   let lastCycleMs = safeInt(liveValues['lastCycleTimeMs']) || safeInt(liveValues['lastCycleTimeSec']) * 1000;

@@ -853,53 +853,52 @@ class _HomeScreenState extends State<HomeScreen> {
       days = report.dailyRecords.reversed.take(10).toList().reversed.toList();
     }
 
-    // Always inject today with live data if stats available
-    if (liveStats != null) {
-      final today = DateTime.now();
-      final todayDate = DateTime(today.year, today.month, today.day);
-      final alreadyHasToday = days.any((d) =>
-          d.date.year == todayDate.year &&
-          d.date.month == todayDate.month &&
-          d.date.day == todayDate.day);
+    // Always inject today into Daily Production History: keep 0 before machine starts giving data, show live value after
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final alreadyHasToday = days.any((d) =>
+        d.date.year == todayDate.year &&
+        d.date.month == todayDate.month &&
+        d.date.day == todayDate.day);
 
-      final liveTodayCycles = liveStats.todayCycles;
-      final liveTodayBlocks = liveStats.actualCount; // totalBlockCountWithCycle
+    final liveTodayCycles = liveStats?.todayCycles ?? 0;
+    final liveTodayBlocks = liveStats?.actualCount ?? 0;
 
-      if (alreadyHasToday) {
-        // Upgrade existing today entry with live values if they're higher
-        days = days.map((d) {
-          final isToday = d.date.year == todayDate.year &&
-              d.date.month == todayDate.month &&
-              d.date.day == todayDate.day;
-          if (isToday) {
-            final bestCycles = liveTodayCycles > d.cycles ? liveTodayCycles : d.cycles;
-            final bestBlocks = liveTodayBlocks > d.blockCount ? liveTodayBlocks : d.blockCount;
-            return DailyProductionRecord(
-              date: d.date,
-              production: bestBlocks.toDouble(),
-              cycles: bestCycles,
-              blockCount: bestBlocks,
-              downtimeMinutes: d.downtimeMinutes,
-              efficiency: d.efficiency,
-              activeMachines: d.activeMachines,
-              hourlyBreakdown: d.hourlyBreakdown,
-            );
-          }
-          return d;
-        }).toList();
-      } else if (liveTodayCycles > 0 || liveTodayBlocks > 0) {
-        // Add a live today entry at the end
-        days.add(DailyProductionRecord(
-          date: todayDate,
-          production: liveTodayBlocks.toDouble(),
-          cycles: liveTodayCycles,
-          blockCount: liveTodayBlocks,
-          downtimeMinutes: 0,
-          efficiency: 0,
-          activeMachines: 0,
-          hourlyBreakdown: const {},
-        ));
-      }
+    if (alreadyHasToday) {
+      days = days.map((d) {
+        final isToday = d.date.year == todayDate.year &&
+            d.date.month == todayDate.month &&
+            d.date.day == todayDate.day;
+        if (isToday) {
+          // Before machine starts giving data today (cycles/blocks == 0), keep today at 0.
+          // Once machine starts giving data today, display the actual value.
+          final curCycles = liveTodayCycles;
+          final curBlocks = liveTodayBlocks;
+          return DailyProductionRecord(
+            date: d.date,
+            production: curBlocks.toDouble(),
+            cycles: curCycles,
+            blockCount: curBlocks,
+            downtimeMinutes: d.downtimeMinutes,
+            efficiency: d.efficiency,
+            activeMachines: d.activeMachines,
+            hourlyBreakdown: d.hourlyBreakdown,
+          );
+        }
+        return d;
+      }).toList();
+    } else {
+      // Add today entry at the end (0 before machine starts, live value after)
+      days.add(DailyProductionRecord(
+        date: todayDate,
+        production: liveTodayBlocks.toDouble(),
+        cycles: liveTodayCycles,
+        blockCount: liveTodayBlocks,
+        downtimeMinutes: 0,
+        efficiency: 0,
+        activeMachines: 0,
+        hourlyBreakdown: const {},
+      ));
     }
 
     if (days.isEmpty) return const SizedBox.shrink();
