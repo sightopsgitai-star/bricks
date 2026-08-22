@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../widgets/responsive.dart';
@@ -122,8 +123,28 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 if (success && context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Ticket raised successfully!')),
+                    const SnackBar(content: Text('Ticket raised successfully! Opening WhatsApp...'), backgroundColor: Colors.green),
                   );
+
+                  // Send message to Admin WhatsApp: 919019743715
+                  final authProvider = context.read<AuthProvider>();
+                  final companyProvider = context.read<CompanyProvider>();
+                  final clientName = companyProvider.selectedCompany?.name ?? 'Client';
+                  final clientId = companyProvider.selectedCompany?.id ?? authProvider.clientId ?? 'N/A';
+
+                  final text = "🚨 *Support Ticket Raised*\n\n"
+                               "🏢 *Client Name:* $clientName\n"
+                               "🆔 *Client ID:* $clientId\n"
+                               "📌 *Title:* ${titleController.text}\n"
+                               "📝 *Description:* ${descController.text.isNotEmpty ? descController.text : 'N/A'}\n"
+                               "📅 *Date:* ${DateTime.now().toString().split('.')[0]}";
+
+                  final whatsappUrl = Uri.parse("https://api.whatsapp.com/send?phone=919019743715&text=${Uri.encodeComponent(text)}");
+                  try {
+                    if (await canLaunchUrl(whatsappUrl)) {
+                      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                    }
+                  } catch (_) {}
                 }
               }
             },

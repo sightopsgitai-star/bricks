@@ -363,7 +363,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                "🏢 *Client Name:* $clientName\n"
                                "🆔 *Client ID:* $clientId\n"
                                "I need assistance regarding our machine operations.";
-                  final whatsappUrl = Uri.parse("https://api.whatsapp.com/send?phone=916369462210&text=${Uri.encodeComponent(text)}");
+                  final whatsappUrl = Uri.parse("https://api.whatsapp.com/send?phone=919019743715&text=${Uri.encodeComponent(text)}");
                   try {
                     if (await canLaunchUrl(whatsappUrl)) {
                       await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
@@ -371,7 +371,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   } catch (_) {}
                 },
                 icon: const Icon(Icons.chat_bubble, size: 20, color: Colors.white),
-                label: const Text('WhatsApp Support (+91 6369462210)'),
+                label: const Text('WhatsApp Support (+91 9019743715)'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green.shade600,
                   foregroundColor: Colors.white,

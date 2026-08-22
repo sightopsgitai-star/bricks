@@ -128,7 +128,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     const SnackBar(content: Text('Ticket raised successfully! Opening WhatsApp...'), backgroundColor: Colors.green),
                   );
 
-                  // Send message to Admin WhatsApp: 916369462210
+                  // Send message to Admin WhatsApp: 919019743715
                   final authProvider = context.read<AuthProvider>();
                   final companyProvider = context.read<CompanyProvider>();
                   final clientName = companyProvider.selectedCompany?.name ?? 'Client';
@@ -141,7 +141,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                "📝 *Description:* ${desc.isNotEmpty ? desc : 'N/A'}\n"
                                "📅 *Date:* ${DateTime.now().toString().split('.')[0]}";
 
-                  final whatsappUrl = Uri.parse("https://api.whatsapp.com/send?phone=916369462210&text=${Uri.encodeComponent(text)}");
+                  final whatsappUrl = Uri.parse("https://api.whatsapp.com/send?phone=919019743715&text=${Uri.encodeComponent(text)}");
                   try {
                     if (await canLaunchUrl(whatsappUrl)) {
                       await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);

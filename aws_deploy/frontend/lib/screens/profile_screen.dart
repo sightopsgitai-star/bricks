@@ -347,26 +347,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Icon(Icons.support_agent, color: Colors.indigo.shade600, size: 22),
                 const SizedBox(width: 8),
-                const Text('Support Center', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                const Text('24x7 Support Center', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 12),
-            Text('Having an issue? Raise a support ticket in our specialized support desk to track response times.',
+            Text('Need immediate technical assistance? Connect with our 24x7 support team directly on WhatsApp.',
               style: TextStyle(fontSize: 13, color: Colors.grey[600])),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // This is a placeholder since the ProfileScreen doesn't have access to the MainScreen's state
-                  // but in a real app, you'd use a GlobalKey or similar to switch tabs.
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please use the "Support" tab in the sidebar to raise tickets.')),
-                  );
+                onPressed: () async {
+                  final authProvider = context.read<AuthProvider>();
+                  final companyProvider = context.read<CompanyProvider>();
+                  final clientName = companyProvider.selectedCompany?.name ?? 'Client';
+                  final clientId = companyProvider.selectedCompany?.id ?? authProvider.clientId ?? 'N/A';
+                  final text = "👋 *Hello 24x7 Support Team*\n\n"
+                               "🏢 *Client Name:* $clientName\n"
+                               "🆔 *Client ID:* $clientId\n"
+                               "I need assistance regarding our machine operations.";
+                  final whatsappUrl = Uri.parse("https://api.whatsapp.com/send?phone=919019743715&text=${Uri.encodeComponent(text)}");
+                  try {
+                    if (await canLaunchUrl(whatsappUrl)) {
+                      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                    }
+                  } catch (_) {}
                 },
-                icon: const Icon(Icons.support_agent, size: 20),
-                label: const Text('Go to Support Desk'),
+                icon: const Icon(Icons.chat_bubble, size: 20, color: Colors.white),
+                label: const Text('WhatsApp Support (+91 9019743715)'),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade600,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
