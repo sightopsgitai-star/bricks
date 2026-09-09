@@ -217,10 +217,13 @@ function buildPayload() {
   // Best available blockCount for backward compatibility
   const blockCount  = safeInt(liveValues['blockCount']) || 24;
 
-  // Calculate today's daily values based on cumulative counters or direct PLC todayCycleCount
-  let todayCycle = safeInt(liveValues['todayCycleCount']);
-  if (todayCycle <= 0 && yesterdayCumulative) {
-    todayCycle = Math.max(0, totalCycle - yesterdayCumulative.cycles);
+  // Calculate today's daily values based on cumulative counters or direct PLC todayCycleCount.
+  // If reference start-of-day cumulative cycles exist, use (totalCycle - yesterdayCumulative.cycles) as ground truth.
+  let todayCycle = 0;
+  if (yesterdayCumulative && yesterdayCumulative.cycles > 0 && totalCycle >= yesterdayCumulative.cycles) {
+    todayCycle = totalCycle - yesterdayCumulative.cycles;
+  } else {
+    todayCycle = safeInt(liveValues['todayCycleCount']);
   }
   if (todayCycle < 0) todayCycle = 0;
   // Keep today's production count 0 before machine starts giving data today, then actual count after
@@ -728,9 +731,11 @@ app.get('/api/data', optionalAuth, async (req, res) => {
     ]);
 
     if (stored) {
-      payload.stats.actualCount     = Math.max(payload.stats.actualCount, stored.production);
-      payload.stats.dailyProduction = payload.stats.actualCount;
-      payload.stats.todayCycles     = Math.max(payload.stats.todayCycles, stored.cycles);
+      if (!payload.plcConnected) {
+        payload.stats.actualCount     = Math.max(payload.stats.actualCount, stored.production);
+        payload.stats.dailyProduction = payload.stats.actualCount;
+        payload.stats.todayCycles     = Math.max(payload.stats.todayCycles, stored.cycles);
+      }
       payload.stats.totalDowntimeMinutes = stored.downtime || 0;
     }
 
