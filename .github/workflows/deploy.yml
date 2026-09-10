@@ -26,7 +26,7 @@ jobs:
       - name: Build Flutter Web
         run: |
           cd demo-main
-          flutter build web --release
+          flutter build web --release --base-href "/"
           mkdir -p ../aws_deploy/frontend/build
           rm -rf ../aws_deploy/frontend/build/web
           cp -r build/web ../aws_deploy/frontend/build/web
