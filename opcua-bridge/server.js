@@ -113,28 +113,42 @@ function lineIsActive() {
 }
 
 /**
- * Writes a value to an OPC UA node on the PLC.
+ * Writes a value to an OPC UA node on the PLC and updates in-memory cache.
  */
-async function writeOpcNode(nodeId, value, dataTypeStr) {
+async function writeOpcNode(nodeIdStr, value, dataTypeStr = 'Boolean') {
+  // Always update in-memory liveValues immediately
+  liveValues[nodeIdStr] = value;
+  const nodeDef = config.nodes.find(n => n.nodeId === nodeIdStr);
+  if (nodeDef) {
+    liveValues[nodeDef.key] = value;
+  }
+
   if (!activeSession) {
-    console.warn(`[PLC] No active session to write to ${nodeId}`);
-    return;
+    console.warn(`[PLC] Session not active. Updated in-memory liveValues['${nodeIdStr}'] = ${value}`);
+    return false;
   }
   try {
-    const nodeToWrite = {
-      nodeId: nodeId,
+    let dt = DataType.Boolean;
+    if (dataTypeStr === 'Int16') dt = DataType.Int16;
+    if (dataTypeStr === 'UInt16') dt = DataType.UInt16;
+    if (dataTypeStr === 'UInt32') dt = DataType.UInt32;
+    if (dataTypeStr === 'Float') dt = DataType.Float;
+
+    const statusCode = await activeSession.write({
+      nodeId: nodeIdStr,
       attributeId: AttributeIds.Value,
       value: {
         value: {
-          dataType: DataType[dataTypeStr],
+          dataType: dt,
           value: value
         }
       }
-    };
-    await activeSession.write(nodeToWrite);
-    console.log(`[PLC] Successfully wrote ${value} (${dataTypeStr}) to ${nodeId}`);
+    });
+    console.log(`[PLC] Wrote node ${nodeIdStr} = ${value} (${dataTypeStr}) → StatusCode: ${statusCode ? statusCode.toString() : 'OK'}`);
+    return statusCode ? statusCode.isGood() : true;
   } catch (err) {
-    console.error(`[PLC] Error writing to ${nodeId}:`, err.message);
+    console.error(`[PLC] Failed to write node ${nodeIdStr}:`, err.message);
+    return false;
   }
 }
 
@@ -934,7 +948,8 @@ app.get('/api/admin/machine-control/:clientId', requireAuth, async (req, res) =>
 /**
  * POST /api/admin/machine-control
  * Body: { clientId, machineId, enabled: true/false }
- * Sets admin override for a specific machine of a specific client.
+ * Sets admin override for a specific machine or all machines of a specific client.
+ * If machineId === 'ALL', also toggles master bit if present.
  */
 app.post('/api/admin/machine-control', requireAuth, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
@@ -943,26 +958,52 @@ app.post('/api/admin/machine-control', requireAuth, async (req, res) => {
     return res.status(400).json({ success: false, message: 'clientId, machineId, and enabled (boolean) are required' });
   }
   try {
+    if (machineId === 'ALL') {
+      // 1. Update all machine overrides in DB
+      for (const m of config.machines) {
+        await dbManager.setMachineOverride(clientId, m.id, enabled).catch(() => {});
+      }
+      console.log(`[ADMIN] Master override: ${clientId}/ALL → ${enabled ? 'ENABLED' : 'DISABLED'}`);
+
+      // 2. Set master network comm bit ns=4;i=723 if exists
+      liveValues['networkCommunicationOk'] = enabled;
+      await writeOpcNode('ns=4;i=723', enabled, 'Boolean');
+
+      // 3. Physically write to PLC stop bits for all machines
+      if (plcConnected && activeSession) {
+        for (const m of config.machines) {
+          if (m.stopBitKey) {
+            const stopBitNode = config.nodes.find(n => n.key === m.stopBitKey);
+            if (stopBitNode) {
+              await writeOpcNode(stopBitNode.nodeId, !enabled, 'Boolean');
+              liveValues[m.stopBitKey] = !enabled;
+            }
+          }
+          if (!enabled && m.runBitKey) {
+            liveValues[m.runBitKey] = false;
+          }
+        }
+      }
+      return res.json({ success: true, message: `All machines ${enabled ? 'ALLOWED' : 'BLOCKED'}` });
+    }
+
     const result = await dbManager.setMachineOverride(clientId, machineId, enabled);
     console.log(`[ADMIN] Machine override: ${clientId}/${machineId} → ${enabled ? 'ENABLED' : 'DISABLED'}`);
 
-    // Physically write to PLC stop/run bits if connected
+    // Physically write to PLC stop bit if connected
     if (plcConnected && activeSession) {
       const machineDef = config.machines.find(m => m.id === machineId);
       if (machineDef) {
-        // Write runBit (true = run, false = stop)
-        if (machineDef.runBitKey) {
-          const runBitNode = config.nodes.find(n => n.key === machineDef.runBitKey);
-          if (runBitNode) {
-            await writeOpcNode(runBitNode.nodeId, enabled, 'Boolean');
-          }
-        }
         // Write stopBit (false = allowed to run, true = stop/interrupted)
         if (machineDef.stopBitKey) {
           const stopBitNode = config.nodes.find(n => n.key === machineDef.stopBitKey);
           if (stopBitNode) {
             await writeOpcNode(stopBitNode.nodeId, !enabled, 'Boolean');
+            liveValues[machineDef.stopBitKey] = !enabled;
           }
+        }
+        if (!enabled && machineDef.runBitKey) {
+          liveValues[machineDef.runBitKey] = false;
         }
       }
     }

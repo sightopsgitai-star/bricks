@@ -31,22 +31,26 @@ class OpcBridgeService {
   // ── Auth ───────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> login(String username, String password) async {
-    final response = await _client.post(
-      Uri.parse('${ApiConfig.baseUrl}/api/auth/login'),
-      headers: {
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true',
-      },
-      body: jsonEncode({'username': username, 'password': password}),
-    );
+    try {
+      final response = await _client.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/auth/login'),
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: jsonEncode({'username': username, 'password': password}),
+      ).timeout(const Duration(seconds: 10));
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      _token = data['token'];
-      return data;
-    } else {
-      final error = jsonDecode(response.body)['message'] ?? 'Login failed';
-      throw Exception(error);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _token = data['token'];
+        return data;
+      } else {
+        final error = jsonDecode(response.body)['message'] ?? 'Login failed';
+        throw Exception(error);
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
@@ -169,6 +173,7 @@ class OpcBridgeService {
           location:      (c['location'] ?? 'Factory').toString(),
           totalMachines: 10,
           isOnline:      c['isOnline'] as bool? ?? false,
+          networkCommunicationOk: c['networkCommunicationOk'] as bool? ?? true,
           latestDowntimeReason: c['latest_downtime_reason']?.toString(),
           latestDowntimeDescription: c['latest_downtime_description']?.toString(),
           lastSeenDate:  c['last_seen_date'] != null
@@ -192,6 +197,25 @@ class OpcBridgeService {
     } catch (e) {
       if (kDebugMode) print('[BRIDGE] Error fetching clients: $e');
       rethrow;
+    }
+  }
+
+  /// Toggles Network Communication bit ns=4;i=723 & 1-min pulse mode (admin only).
+  Future<bool> toggleNetworkCommunication({bool? enabled, bool? autoPulse}) async {
+    try {
+      final bodyMap = <String, dynamic>{};
+      if (enabled != null) bodyMap['enabled'] = enabled;
+      if (autoPulse != null) bodyMap['autoPulse'] = autoPulse;
+
+      final response = await _client.post(
+        Uri.parse('${ApiConfig.baseUrl}/api/admin/network-comm'),
+        headers: _headers,
+        body: jsonEncode(bodyMap),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      if (kDebugMode) print('[BRIDGE] Error toggling network comm: $e');
+      return false;
     }
   }
 

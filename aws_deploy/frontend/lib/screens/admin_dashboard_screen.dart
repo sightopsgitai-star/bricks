@@ -174,9 +174,38 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildOverview(ThemeData theme, TicketProvider ticketProvider) {
+    final commOk = _clients.isNotEmpty && _clients.every((c) => c.networkCommunicationOk);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Row(
       children: [
         _StatItem(label: 'Total Clients', value: _clients.length.toString(), icon: Icons.business),
+        const SizedBox(width: 12),
+        _NetworkCommStatItem(
+          commOk: commOk,
+          isDark: isDark,
+          onToggle: (newValue) async {
+            try {
+              final bridge = OpcBridgeService();
+              final success = await bridge.toggleNetworkCommunication(enabled: newValue, autoPulse: false);
+              if (mounted && success) {
+                _loadData();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Network Communication (ns=4;i=723) bit set to: ${newValue ? "TRUE (1)" : "FALSE (0)"}'),
+                    backgroundColor: newValue ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                );
+              }
+            }
+          },
+        ),
         const SizedBox(width: 12),
         _StatItem(
             label: 'Open Tickets',
@@ -188,7 +217,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             label: 'In Progress',
             value: ticketProvider.inProgressTicketCount.toString(),
             icon: Icons.timer,
-            color: Colors.greenAccent),
+            color: Colors.lightBlueAccent),
         const SizedBox(width: 12),
         // ADD CLIENT CARD
         _AddClientStatItem(onTap: _showAddClientDialog),
@@ -837,9 +866,38 @@ class _ClientCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            client.location, 
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: client.networkCommunicationOk 
+                  ? Colors.green.withValues(alpha: 0.1) 
+                  : Colors.red.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: client.networkCommunicationOk 
+                    ? Colors.green.withValues(alpha: 0.3) 
+                    : Colors.red.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  client.networkCommunicationOk ? Icons.cell_tower : Icons.portable_wifi_off,
+                  size: 13,
+                  color: client.networkCommunicationOk ? Colors.green : Colors.red,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Network Comm (ns=4;i=723): ${client.networkCommunicationOk ? "OK (Running)" : "INTERRUPTED (Stopped)"}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: client.networkCommunicationOk ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
           ),
           const Spacer(),
           Row(
@@ -913,11 +971,14 @@ class _ClientCard extends StatelessWidget {
               // Machine Control Button
               Expanded(
                 child: InkWell(
-                  onTap: () {
-                    showDialog(
+                  onTap: () async {
+                    await showDialog(
                       context: context,
                       builder: (_) => _MachineControlDialog(client: client),
                     );
+                    if (mounted) {
+                      _loadData();
+                    }
                   },
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
@@ -982,11 +1043,13 @@ class _MachineControlDialogState extends State<_MachineControlDialog> {
   final Map<String, bool> _overrides = {};
   final Map<String, Machine> _liveMachines = {};
   bool _isLoading = true;
+  bool _clientCommOk = true;
   final Set<String> _saving = {};
 
   @override
   void initState() {
     super.initState();
+    _clientCommOk = widget.client.networkCommunicationOk;
     _loadOverrides();
   }
 
@@ -1000,8 +1063,12 @@ class _MachineControlDialogState extends State<_MachineControlDialog> {
       final dashboardData = await bridge.fetchDashboardData(widget.client.id);
       final List<Machine> machines = List<Machine>.from(dashboardData['machines'] ?? []);
 
+      final clients = await bridge.fetchClients().catchError((_) => <Company>[]);
+      final currentClient = clients.firstWhere((c) => c.id == widget.client.id, orElse: () => widget.client);
+
       if (mounted) {
         setState(() {
+          _clientCommOk = currentClient.networkCommunicationOk;
           _overrides.clear();
           _overrides.addAll(data);
           // Machines not in map are implicitly enabled
@@ -1025,6 +1092,44 @@ class _MachineControlDialogState extends State<_MachineControlDialog> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Could not load overrides: $e'), backgroundColor: Colors.orange),
+        );
+      }
+    }
+  }
+
+  Future<void> _setMasterClientAccess(bool allow) async {
+    setState(() => _isLoading = true);
+    try {
+      final bridge = OpcBridgeService();
+      // 1. Set network communication bit ns=4;i=723 & disable auto-pulse
+      await bridge.toggleNetworkCommunication(enabled: allow, autoPulse: false);
+
+      // 2. Set ALL machines override
+      await bridge.setMachineOverride(widget.client.id, 'ALL', allow);
+
+      if (mounted) {
+        setState(() {
+          _clientCommOk = allow;
+          for (final m in _kMachineList) {
+            _overrides[m['id']!] = allow;
+          }
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            allow
+                ? 'Machine Access ALLOWED for ${widget.client.name} (ns=4;i=723 = TRUE)'
+                : 'Machine Access BLOCKED for ${widget.client.name} (ns=4;i=723 = FALSE)',
+          ),
+          backgroundColor: allow ? Colors.green : Colors.red,
+          duration: const Duration(seconds: 3),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -1094,26 +1199,125 @@ class _MachineControlDialogState extends State<_MachineControlDialog> {
       ),
       contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       content: SizedBox(
-        width: 520,
-        height: 540,
+        width: 540,
+        height: 560,
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  // Header legend
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                  // ── Master Client Machine Access Banner ───────────────────────
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(2, 0, 2, 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _clientCommOk
+                          ? (isDark ? Colors.green.withValues(alpha: 0.12) : Colors.green.shade50)
+                          : (isDark ? Colors.red.withValues(alpha: 0.15) : Colors.red.shade50),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _clientCommOk
+                            ? Colors.green.withValues(alpha: 0.4)
+                            : Colors.red.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
+                    ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline, size: 14, color: Colors.grey),
-                        const SizedBox(width: 6),
-                        const Expanded(
-                          child: Text('Toggle ALLOW/BLOCK to control machine access for this client.',
-                              style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        Icon(
+                          _clientCommOk ? Icons.cell_tower : Icons.portable_wifi_off,
+                          color: _clientCommOk ? Colors.green : Colors.red,
+                          size: 22,
                         ),
-                        _buildLegendPill('ALLOW', Colors.green),
-                        const SizedBox(width: 6),
-                        _buildLegendPill('BLOCK', Colors.red),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _clientCommOk ? 'MACHINE ACCESS: ALLOWED' : 'MACHINE ACCESS: BLOCKED',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: _clientCommOk ? Colors.green : Colors.red,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Bit (ns=4;i=723): ${_clientCommOk ? "TRUE (1)" : "FALSE (0)"}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white70 : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Master ALLOW Button
+                        InkWell(
+                          onTap: () => _setMasterClientAccess(true),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: _clientCommOk ? Colors.green : (isDark ? Colors.white12 : Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: _clientCommOk ? Colors.green : Colors.grey.shade400),
+                              boxShadow: _clientCommOk
+                                  ? [BoxShadow(color: Colors.green.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.lock_open_rounded, size: 14, color: _clientCommOk ? Colors.white : Colors.grey),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'ALLOW',
+                                  style: TextStyle(
+                                    color: _clientCommOk ? Colors.white : (isDark ? Colors.white70 : Colors.grey.shade700),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Master BLOCK Button
+                        InkWell(
+                          onTap: () => _setMasterClientAccess(false),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: !_clientCommOk ? Colors.red : (isDark ? Colors.white12 : Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: !_clientCommOk ? Colors.red : Colors.grey.shade400),
+                              boxShadow: !_clientCommOk
+                                  ? [BoxShadow(color: Colors.red.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.lock_rounded, size: 14, color: !_clientCommOk ? Colors.white : Colors.grey),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'BLOCK',
+                                  style: TextStyle(
+                                    color: !_clientCommOk ? Colors.white : (isDark ? Colors.white70 : Colors.grey.shade700),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1211,52 +1415,67 @@ class _MachineControlDialogState extends State<_MachineControlDialog> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                // ── Custom ALLOW/BLOCK Toggle ──────────────────────────
+                                // ── Custom ALLOW / BLOCK Segmented Controls ───────────
                                 isSaving
                                     ? const SizedBox(
                                         width: 32, height: 32,
                                         child: CircularProgressIndicator(strokeWidth: 2.5))
-                                    : GestureDetector(
-                                        onTap: () => _toggle(id, !enabled),
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 250),
-                                          width: 90,
-                                          height: 34,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(8),
-                                            color: enabled ? Colors.green : Colors.red,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: (enabled ? Colors.green : Colors.red)
-                                                    .withValues(alpha: 0.35),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 2),
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          InkWell(
+                                            onTap: enabled ? null : () => _toggle(id, true),
+                                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                              decoration: BoxDecoration(
+                                                color: enabled ? Colors.green : (isDark ? Colors.white10 : Colors.grey.shade200),
+                                                borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                                                border: Border.all(color: enabled ? Colors.green : Colors.grey.shade400),
                                               ),
-                                            ],
-                                          ),
-                                          child: Center(
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  enabled ? Icons.lock_open_rounded : Icons.lock_rounded,
-                                                  size: 14,
-                                                  color: Colors.white,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  enabled ? 'ALLOW' : 'BLOCK',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                    letterSpacing: 0.5,
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.lock_open_rounded, size: 13, color: enabled ? Colors.white : Colors.grey),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    'ALLOW',
+                                                    style: TextStyle(
+                                                      color: enabled ? Colors.white : (isDark ? Colors.white70 : Colors.grey.shade700),
+                                                      fontSize: 11,
+                                                      fontWeight: enabled ? FontWeight.bold : FontWeight.normal,
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ),
-                                        ),
+                                          InkWell(
+                                            onTap: !enabled ? null : () => _toggle(id, false),
+                                            borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                              decoration: BoxDecoration(
+                                                color: !enabled ? Colors.red : (isDark ? Colors.white10 : Colors.grey.shade200),
+                                                borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                                                border: Border.all(color: !enabled ? Colors.red : Colors.grey.shade400),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.lock_rounded, size: 13, color: !enabled ? Colors.white : Colors.grey),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    'BLOCK',
+                                                    style: TextStyle(
+                                                      color: !enabled ? Colors.white : (isDark ? Colors.white70 : Colors.grey.shade700),
+                                                      fontSize: 11,
+                                                      fontWeight: !enabled ? FontWeight.bold : FontWeight.normal,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                               ],
                             ),
@@ -1310,6 +1529,115 @@ class _LegendChip extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
+    );
+  }
+}
+
+class _NetworkCommStatItem extends StatelessWidget {
+  final bool commOk;
+  final bool isDark;
+  final ValueChanged<bool> onToggle;
+
+  const _NetworkCommStatItem({
+    required this.commOk,
+    required this.isDark,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = commOk ? Colors.greenAccent : Colors.redAccent;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.4),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Icon(
+                commOk ? Icons.cell_tower : Icons.portable_wifi_off,
+                color: statusColor,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Net Comm (ns=4;i=723)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white70 : Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blueAccent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.5)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.bolt, size: 10, color: Colors.blueAccent),
+                    SizedBox(width: 2),
+                    Text(
+                      '2s ON / 1m OFF',
+                      style: TextStyle(fontSize: 9, color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    commOk ? 'OK (TRUE)' : 'INTERRUPTED (FALSE)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Bit Value: ${commOk ? "true (1)" : "false (0)"}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? Colors.grey : Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              Transform.scale(
+                scale: 0.8,
+                child: Switch(
+                  value: commOk,
+                  activeColor: Colors.greenAccent,
+                  inactiveThumbColor: Colors.redAccent,
+                  onChanged: onToggle,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
