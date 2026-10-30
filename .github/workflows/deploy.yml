@@ -59,10 +59,16 @@ jobs:
             # Clean and install production dependencies (respecting package overrides)
             rm -rf node_modules package-lock.json
             npm install --omit=dev
+            npm install hexy@0.3.3 --save-exact
 
             # Restart the app using PM2 (using npx pm2 guarantees execution)
             npx pm2 delete bricks-backend || true
             npx pm2 start server.js --name "bricks-backend"
             npx pm2 save
+
+            # Verification
+            sleep 3
+            npx pm2 status
+            curl -I http://127.0.0.1:3001/api/status || true
 
 
