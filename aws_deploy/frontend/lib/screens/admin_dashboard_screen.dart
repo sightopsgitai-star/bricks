@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/providers.dart';
 import '../models/models.dart';
 import '../services/opc_bridge_service.dart';
-import 'home_screen.dart';
 import 'main_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -133,7 +132,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final client = _clients[index];
-                              return _ClientCard(client: client);
+                              return _ClientCard(client: client, onRefresh: _loadData);
                             },
                             childCount: _clients.length,
                           ),
@@ -808,7 +807,8 @@ class _RemoveClientStatItem extends StatelessWidget {
 
 class _ClientCard extends StatelessWidget {
   final Company client;
-  const _ClientCard({required this.client});
+  final VoidCallback? onRefresh;
+  const _ClientCard({required this.client, this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -976,9 +976,7 @@ class _ClientCard extends StatelessWidget {
                       context: context,
                       builder: (_) => _MachineControlDialog(client: client),
                     );
-                    if (mounted) {
-                      _loadData();
-                    }
+                    onRefresh?.call();
                   },
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
@@ -1498,37 +1496,6 @@ class _MachineControlDialogState extends State<_MachineControlDialog> {
           onPressed: _loadOverrides,
         ),
       ],
-    );
-  }
-
-  Widget _buildLegendPill(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(label,
-          style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
-    );
-  }
-}
-
-class _LegendChip extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _LegendChip({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
-      child: Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
     );
   }
 }
